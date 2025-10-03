@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Professional Stock Analysis Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #0f0f0f 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .dashboard-container {
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .title {
+      text-align: center;
+      font-size: 3rem;
+      font-weight: 700;
+      background: linear-gradient(45deg, #00d4ff, #ff6b6b, #4ecdc4);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 3s ease-in-out infinite;
+      margin-bottom: 3rem;
+      letter-spacing: -2px;
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .controls-section {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .control-label {
+      font-size: 0.9rem;
+      color: #a0a0a0;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .modern-button, .modern-select, .modern-input {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(10px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .modern-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s;
+    }
+
+    .modern-button:hover::before {
+      left: 100%;
+    }
+
+    .modern-button:hover, .modern-select:hover, .modern-input:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(0, 212, 255, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 212, 255, 0.2);
+    }
+
+    .start-analysis-btn {
+      background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+      border: none;
+      color: white;
+      padding: 1.2rem 3rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .start-analysis-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .start-analysis-btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .start-analysis-btn:disabled {
+      background: rgba(100, 100, 100, 0.3);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .status {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+      font-weight: 500;
+      padding: 1rem;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+    }
+
+    .charts-container {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 3rem;
+      flex-wrap: nowrap;
+      width: 100%;
+    }
+
+    .chart-wrapper {
+      flex: 1;           
+      min-width: 0;      
+      max-width: 49%;    
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+      padding: 0.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      transition: transform 0.3s ease;
+    }
+
+    .chart-wrapper:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .plotly-graph-div {
+      border-radius: 12px;
+    }
+
+    .perform-analysis-section {
+      text-align: center;
+      margin: 3rem 0;
+      display: none;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s ease;
+    }
+
+    .perform-analysis-section.show {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .perform-analysis-btn {
+      background: linear-gradient(45deg, #4ecdc4, #44a08d);
+      border: none;
+      color: white;
+      padding: 1.5rem 4rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .perform-analysis-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 15px 35px rgba(78, 205, 196, 0.4);
+    }
+
+    .analysis-loading {
+      display: none;
+      text-align: center;
+      margin: 3rem 0;
+    }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-left: 4px solid #00d4ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 2rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #00d4ff;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .analysis-results {
+      display: none;
+      margin-top: 3rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      animation: fadeInUp 0.6s ease;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .analysis-title {
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 2rem;
+      background: linear-gradient(45deg, #00d4ff, #4ecdc4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .analysis-summary {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .summary-column {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+      padding: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .column-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .model-tf {
+      background: linear-gradient(45deg, #00d4ff, #0099cc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .model-lstm {
+      background: linear-gradient(45deg, #4ecdc4, #44a08d);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .metric-name {
+      font-size: 1rem;
+      color: #a0a0a0;
+      font-weight: 500;
+    }
+
+    .metric-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .metric-positive {
+      color: #4ecdc4;
+      font-weight: 600;
+    }
+
+    .metric-negative {
+      color: #ff6b6b;
+      font-weight: 600;
+    }
+
+    .metric-neutral {
+      color: #ffd93d;
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .controls-section {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .charts-container {
+        flex-direction: column;
+      }
+      
+      .chart-wrapper {
+        min-width: auto;
+        max-width: 100%;
+      }
+      
+      .title {
+        font-size: 2rem;
+      }
+
+      .analysis-summary {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <h1 class="title">📈 PROFESSIONAL STOCK ANALYSIS</h1>
+    
+    <div id="status" class="status">Connecting to server...</div>
+    
+    <div class="controls-section">
+      <div class="control-group">
+        <label class="control-label">Stock Type</label>
+        <select id="stockType" class="modern-select">
+          <option value="AAPL">Apple (AAPL)</option>
+          <option value="GOOGL">Google (GOOGL)</option>
+          <option value="MSFT">Microsoft (MSFT)</option>
+          <option value="TSLA">Tesla (TSLA)</option>
+          <option value="AMZN">Amazon (AMZN)</option>
+        </select>
+      </div>
+      
+      <div class="control-group">
+        <label class="control-label">Set ID</label>
+        <input type="text" id="setId" class="modern-input" placeholder="Enter Set ID" />
+      </div>
+      
+      <div class="control-group">
+        <label class="control-label">Analysis Control</label>
+        <button id="startButton" class="modern-button start-analysis-btn" disabled>
+          <i class="fas fa-rocket"></i> START ANALYSIS
+        </button>
+      </div>
+    </div>
+
+    <div class="charts-container">
+      <div class="chart-wrapper">
+        <div id="stockChart1"></div>
+      </div>
+      <div class="chart-wrapper">
+        <div id="stockChart2"></div>
+      </div>
+    </div>
+
+    <div id="performAnalysisSection" class="perform-analysis-section">
+      <button id="performAnalysisBtn" class="perform-analysis-btn">
+        <i class="fas fa-chart-line"></i> PERFORM DEEP ANALYSIS
+      </button>
+    </div>
+
+    <div id="analysisLoading" class="analysis-loading">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Analyzing Performance ...</div>
+    </div>
+
+    <div id="analysisResults" class="analysis-results">
+      <h2 class="analysis-title">📊 COMPREHENSIVE MODEL ANALYSIS</h2>
+      
+      <div class="analysis-summary">
+        <div class="summary-column">
+          <h3 class="column-title model-tf">🔷 Transformer Model</h3>
+          <div class="metric-row">
+            <span class="metric-name">Mean Absolute Error</span>
+            <span class="metric-value metric-neutral" id="tf-mae">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">Mean Percentage Error</span>
+            <span class="metric-value metric-neutral" id="tf-mpe">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">Root Mean Squared Error</span>
+            <span class="metric-value metric-neutral" id="tf-rmse">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">Mean Squared Error</span>
+            <span class="metric-value metric-neutral" id="tf-mse">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">R² Score</span>
+            <span class="metric-value metric-positive" id="tf-r2">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">Direction Accuracy</span>
+            <span class="metric-value metric-positive" id="tf-dir">-</span>
+          </div>
+        </div>
+
+        <div class="summary-column">
+          <h3 class="column-title model-lstm">🔶 LSTM Model</h3>
+          <div class="metric-row">
+            <span class="metric-name">Mean Absolute Error</span>
+            <span class="metric-value metric-neutral" id="lstm-mae">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">Mean Percentage Error</span>
+            <span class="metric-value metric-neutral" id="lstm-mpe">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">Root Mean Squared Error</span>
+            <span class="metric-value metric-neutral" id="lstm-rmse">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">Mean Squared Error</span>
+            <span class="metric-value metric-neutral" id="lstm-mse">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">R² Score</span>
+            <span class="metric-value metric-positive" id="lstm-r2">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">Direction Accuracy</span>
+            <span class="metric-value metric-positive" id="lstm-dir">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let ws;
+    const maxTicks = 25;
+    let tick = 0;
+    let xData = [];
+    let yActual = [];
+    let yPredicted = [];
+    let yActual2 = [];
+    let yPredicted2 = [];
+    let isPlottingComplete = false;
+    
+    const baseLayout = {
+      margin: { t: 60, r: 50, l: 50, b: 50 },
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(255,255,255,0.02)',
+      height: 500,
+      xaxis: { 
+        title: { text: "Time (ticks)", font: { color: '#a0a0a0' } },
+        range: [0, maxTicks], 
+        showgrid: true, 
+        gridcolor: 'rgba(255,255,255,0.1)',
+        color: '#a0a0a0'
+      },
+      yaxis: { 
+        title: { text: "Price ($)", font: { color: '#a0a0a0' } },
+        showgrid: true, 
+        range: [150, 250],
+        gridcolor: 'rgba(255,255,255,0.1)',
+        color: '#a0a0a0'
+      },
+      font: { color: '#ffffff' }
+    };
+    
+    function initializeCharts() {
+      const stockType = document.getElementById('stockType').value;
+      
+      Plotly.newPlot('stockChart1', [
+        {
+          x: [], y: [], mode: 'lines+markers',
+          line: { color: 'rgb(0, 212, 255)', width: 7, shape: 'linear' },
+          marker: { size: 6, color: 'rgb(0, 212, 255)' },
+          name: 'Actual Price'
+        },
+        {
+          x: [], y: [], mode: 'lines+markers',
+          line: { color: 'rgb(255, 255, 0)', width: 7, shape : 'linear' },
+          marker: { size: 4, color: 'rgb(255, 255, 0)' },
+          name: 'Predicted Price'
+        }
+      ], { 
+        ...baseLayout, 
+        title: { text: `LSTM`, font: { size: 25, color: '#ffffff' } } 
+      }, { displayModeBar: false, responsive: true });
+    
+      Plotly.newPlot('stockChart2', [
+        {
+          x: [], y: [], mode: 'lines+markers',
+          line: { color: 'rgb(255, 107, 107)', width: 7, shape: 'linear' },
+          marker: { size: 6, color: 'rgb(255, 107, 107)' },
+          name: 'Actual Price'
+        },
+        {
+          x: [], y: [], mode: 'lines+markers',
+          line: { color: 'rgb(0, 255, 128)', width: 7, shape : 'linear' },
+          marker: { size: 4, color: 'rgb(0, 255, 128)' },
+          name: 'Predicted Price'
+        }
+      ], { 
+        ...baseLayout, 
+        title: { text: "TRANSFORMER", font: { size: 25, color: '#ffffff' } } 
+      }, { displayModeBar: false, responsive: true });
+    }
+    
+    function connectWebSocket() {
+      const setId = document.getElementById('setId').value;
+      if (!setId) {
+        alert('Please enter a Set ID');
+        return;
+      }
+    
+      ws = new WebSocket(`ws://localhost:8000/ws/${setId}`);
+    
+      ws.onopen = () => {
+        document.getElementById('status').innerHTML = '<i class="fas fa-check-circle"></i> Connected Successfully';
+        document.getElementById('status').style.color = "#4ecdc4";
+        document.getElementById('startButton').disabled = false;
+        initializeCharts();
+      };
+    
+      ws.onclose = () => {
+        document.getElementById('status').innerHTML = '<i class="fas fa-times-circle"></i> Disconnected';
+        document.getElementById('status').style.color = "#ff6b6b";
+        document.getElementById('startButton').disabled = true;
+      };
+    
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const actualPrice = data.actual;     
+        const predictedPriceTf = data.tf_predicted;
+        const predictedPricelstm = data.lstm_predicted;
+    
+        tick++;
+        xData.push(tick);
+        yActual.push(actualPrice);
+        yPredicted.push(predictedPricelstm);
+        yActual2.push(actualPrice);
+        yPredicted2.push(predictedPriceTf);
+    
+        if (xData.length > maxTicks) {
+          xData.shift();
+          yActual.shift();
+          yPredicted.shift();
+          yActual2.shift();
+          yPredicted2.shift();
+        }
+    
+        Plotly.update('stockChart1', 
+          { x: [xData, xData], y: [yActual, yPredicted] }, {}, [0,1]
+        );
+    
+        Plotly.update('stockChart2', 
+          { x: [xData, xData], y: [yActual2, yPredicted2] }, {}, [0,1]
+        );
+    
+        if (xData.length > 20 && !isPlottingComplete) {
+          isPlottingComplete = true;
+          setTimeout(() => {
+            document.getElementById('performAnalysisSection').classList.add('show');
+          }, 1000);
+        }
+      };
+    }
+    
+    function calculateMetrics(actual, predicted) {
+      const n = actual.length;
+      if (n === 0) return null;
+      
+      let mae = 0;
+      let mpe = 0;
+      let mse = 0;
+      let correctDirection = 0;
+      
+      for (let i = 0; i < n; i++) {
+        const error = Math.abs(actual[i] - predicted[i]);
+        mae += error;
+        mpe += (error / actual[i]) * 100;
+        mse += Math.pow(actual[i] - predicted[i], 2);
+        
+        if (i > 0) {
+          const actualDir = actual[i] - actual[i-1];
+          const predDir = predicted[i] - predicted[i-1];
+          if ((actualDir > 0 && predDir > 0) || (actualDir < 0 && predDir < 0) || (actualDir === 0 && predDir === 0)) {
+            correctDirection++;
+          }
+        }
+      }
+      
+      mae = mae / n;
+      mpe = mpe / n;
+      mse = mse / n;
+      const rmse = Math.sqrt(mse);
+      const directionAccuracy = (correctDirection / (n - 1)) * 100;
+      
+      const meanActual = actual.reduce((a, b) => a + b, 0) / n;
+      let ssTotal = 0;
+      let ssResidual = 0;
+      
+      for (let i = 0; i < n; i++) {
+        ssTotal += Math.pow(actual[i] - meanActual, 2);
+        ssResidual += Math.pow(actual[i] - predicted[i], 2);
+      }
+      
+      const r2 = 1 - (ssResidual / ssTotal);
+      
+      return {
+        mae: mae.toFixed(2),
+        mpe: mpe.toFixed(2),
+        rmse: rmse.toFixed(2),
+        mse: mse.toFixed(2),
+        r2: r2.toFixed(4),
+        directionAccuracy: directionAccuracy.toFixed(1)
+      };
+    }
+    
+    document.getElementById('performAnalysisBtn').onclick = () => {
+      document.getElementById('performAnalysisSection').style.display = 'none';
+      document.getElementById('analysisLoading').style.display = 'block';
+      
+      setTimeout(() => {
+        const tfMetrics = calculateMetrics(yActual2, yPredicted2);
+        const lstmMetrics = calculateMetrics(yActual, yPredicted);
+        
+        document.getElementById('tf-mae').textContent = `$${tfMetrics.mae}`;
+        document.getElementById('tf-mpe').textContent = `${tfMetrics.mpe}%`;
+        document.getElementById('tf-rmse').textContent = `$${tfMetrics.rmse}`;
+        document.getElementById('tf-mse').textContent = `${tfMetrics.mse}`;
+        document.getElementById('tf-r2').textContent = tfMetrics.r2;
+        document.getElementById('tf-dir').textContent = `${tfMetrics.directionAccuracy}%`;
+        
+        document.getElementById('lstm-mae').textContent = `$${lstmMetrics.mae}`;
+        document.getElementById('lstm-mpe').textContent = `${lstmMetrics.mpe}%`;
+        document.getElementById('lstm-rmse').textContent = `$${lstmMetrics.rmse}`;
+        document.getElementById('lstm-mse').textContent = `${lstmMetrics.mse}`;
+        document.getElementById('lstm-r2').textContent = lstmMetrics.r2;
+        document.getElementById('lstm-dir').textContent = `${lstmMetrics.directionAccuracy}%`;
+        
+        const applyColors = (prefix, metrics) => {
+          document.getElementById(`${prefix}-mae`).className = parseFloat(metrics.mae) < 5 ? 'metric-value metric-positive' : 'metric-value metric-neutral';
+          document.getElementById(`${prefix}-mpe`).className = parseFloat(metrics.mpe) < 3 ? 'metric-value metric-positive' : 'metric-value metric-neutral';
+          document.getElementById(`${prefix}-rmse`).className = parseFloat(metrics.rmse) < 7 ? 'metric-value metric-positive' : 'metric-value metric-neutral';
+          document.getElementById(`${prefix}-mse`).className = 'metric-value metric-neutral';
+          
+          document.getElementById(`${prefix}-r2`).className = parseFloat(metrics.r2) > 0.85 ? 'metric-value metric-positive' : parseFloat(metrics.r2) > 0.7 ? 'metric-value metric-neutral' : 'metric-value metric-negative';
+          document.getElementById(`${prefix}-dir`).className = parseFloat(metrics.directionAccuracy) > 70 ? 'metric-value metric-positive' : parseFloat(metrics.directionAccuracy) > 50 ? 'metric-value metric-neutral' : 'metric-value metric-negative';
+        };
+        
+        applyColors('tf', tfMetrics);
+        applyColors('lstm', lstmMetrics);
+        
+        document.getElementById('analysisLoading').style.display = 'none';
+        document.getElementById('analysisResults').style.display = 'block';
+        
+        document.getElementById('analysisResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 2000);
+    };
+    
+    document.getElementById('startButton').onclick = () => {
+      //connectWebSocket();
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send('start_producer');
+        document.getElementById('status').innerHTML = '<i class="fas fa-play"></i> Analysis Started';
+        document.getElementById('status').style.color = "#00d4ff";
+        tick = 0;
+        xData = [];
+        yActual = [];
+        yPredicted = [];
+        yActual2 = [];
+        yPredicted2 = [];
+        isPlottingComplete = false;
+        document.getElementById('performAnalysisSection').classList.remove('show');
+        document.getElementById('analysisResults').style.display = 'none';
+      }
+    };
+    
+    window.onload = () => {
+      document.getElementById('setId').value = Math.floor(Math.random() * 6);
+      connectWebSocket();
+    };
+  </script>
+    
+</body>
+
+</html>
