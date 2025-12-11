@@ -17,8 +17,6 @@ conf = {'bootstrap.servers': "localhost:9092"}
 producer = Producer(conf)
 
 
-
-
 def delivery_report(err, msg):
     if err is not None:
         print("Delivery failed:", err)
@@ -45,7 +43,7 @@ async def websocket_endpoint(websocket: WebSocket, set_id: str):
 
 async def produce_messages(set_id):
     await asyncio.sleep(2)
-    os.chdir("/home/piyush/StockTransformer/Apple")       
+    os.chdir("/home/piyush/Predictive_performance_analysis/Apple")       
     df = pd.read_csv(f"Apple_test_set_{set_id}.csv")
 
     price_returns = []
