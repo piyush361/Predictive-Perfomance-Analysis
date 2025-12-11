@@ -85,7 +85,7 @@ bin/kafka-storage.sh format --standalone -t pK9Yh3uFSxiKnC4M0ZsSDQ -c config/ser
 bin/kafka-server-start.sh config/server.properties
 ```
 
-> After starting the kafka , run below command to start the backend.
+> After starting the kafka , run below command to start the backend. In Python
 
 ```bash [python]
 uvicorn backend:app
